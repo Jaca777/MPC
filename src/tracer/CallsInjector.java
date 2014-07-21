@@ -11,7 +11,10 @@ import static org.objectweb.asm.Opcodes.*;
  * @author JacaDev
  */
 public class CallsInjector {
+    private static final byte B32 = DUP;
+    private static final byte B64 = DUP2;
 
+    @SuppressWarnings("unchecked")
     public static void inject(ClassNode clazz, String path) {
         List<MethodNode> methods = clazz.methods;
         for (MethodNode method : methods) {
@@ -28,18 +31,31 @@ public class CallsInjector {
             if (isCallInsn(instruction.getOpcode())) {
                 LocalVariableNode localVariable =
                         getLocalVariableNode((VarInsnNode) instruction, method);
-                InsnList call = new InsnList();
-                call.add(new InsnNode(DUP));
-                if (!localVariable.desc.startsWith("L"))
-                    call.add(new MethodInsnNode(INVOKESTATIC, "tracer/Boxer", "box", "(" + localVariable.desc + ")Ljava/lang/Object;", false));
-                call.add(new LdcInsnNode(localVariable.desc + " " + localVariable.name));
-                call.add(new LdcInsnNode(methodPath));
-                call.add(new MethodInsnNode(INVOKESTATIC, "tracer/Tracer", "varChanged", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;)V", false));
-                newStack.insertBefore(instruction, call);
+                if (localVariable != null) {
+                    InsnList call = new InsnList();
+                    call.add(new InsnNode(getSize(localVariable.desc)));
+                    if (!localVariable.desc.startsWith("L") && !localVariable.desc.startsWith("["))
+                        call.add(new MethodInsnNode(INVOKESTATIC, "tracer/Boxer", "box", "(" + localVariable.desc + ")Ljava/lang/Object;", false));
+                    call.add(new LdcInsnNode(localVariable.desc + " " + localVariable.name));
+                    call.add(new LdcInsnNode(methodPath));
+                    call.add(new MethodInsnNode(INVOKESTATIC, "tracer/Tracer", "varChanged", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;)V", false));
+                    newStack.insertBefore(instruction, call);
+                }
             }
         }
         method.instructions = newStack;
     }
+
+    private static byte getSize(String desc) {
+        switch (desc.charAt(0)) {
+            case 'J':
+            case 'D':
+                return B64;
+            default:
+                return B32;
+        }
+    }
+
     private static boolean isCallInsn(int storeInsn) {
         return 53 < storeInsn && storeInsn < 59;
     }
@@ -57,7 +73,7 @@ public class CallsInjector {
                 }
             }
         }
-        throw new RuntimeException("Var not found: " + varIdx + " in " + methodNode.name);
+        return null;
     }
 
     private static int getInsnIndex(AbstractInsnNode insnNode) {

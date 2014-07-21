@@ -4,6 +4,7 @@ package tracer;
  * @author JacaDev
  */
 public class Boxer {
+
     public static Object box(byte val){
         return val;
     }

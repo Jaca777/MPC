@@ -5,13 +5,14 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 /**
  * @author JacaDev
  */
-public class IClassLoader extends ClassLoader {
+public class ClassLoaderImpl extends ClassLoader {
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         if (!name.startsWith("java.")) {
@@ -32,5 +33,21 @@ public class IClassLoader extends ClassLoader {
         } else {
             return super.loadClass(name, resolve);
         }
+    }
+
+    public static byte[] getBytes(String clazz) throws IOException {
+        ClassLoader loader = getSystemClassLoader();
+        InputStream is = loader.getResourceAsStream(clazz);
+        return getBytes(is);
+    }
+    private static byte[] getBytes(InputStream stream) throws IOException {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        int n;
+        byte[] data = new byte[16384];
+        while ((n = stream.read(data, 0, data.length)) != -1) {
+            buffer.write(data, 0, n);
+        }
+        buffer.flush();
+        return buffer.toByteArray();
     }
 }

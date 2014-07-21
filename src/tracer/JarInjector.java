@@ -6,6 +6,7 @@ import org.objectweb.asm.tree.ClassNode;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 import java.util.concurrent.*;
@@ -18,7 +19,28 @@ import java.util.zip.ZipEntry;
  * @author JacaDev
  */
 public class JarInjector {
-    public static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 8);
+    public static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 4);
+    public static final byte[] BOXER;
+    static{
+        byte[] BOXER1;
+        try {
+            BOXER1 = ClassLoaderImpl.getBytes("tracer/Boxer.class");
+        } catch (IOException e) {
+            BOXER1 = null;
+        }
+        BOXER = BOXER1;
+    }
+
+    public static final byte[] TRACER;
+    static{
+        byte[] TRACER1;
+        try {
+            TRACER1 = ClassLoaderImpl.getBytes("tracer/Tracer.class");
+        } catch (IOException e) {
+            TRACER1 = null;
+        }
+        TRACER = TRACER1;
+    }
 
     private static class CallableInjector implements Callable<ClassNode> {
         private final InputStream stream;
@@ -32,6 +54,7 @@ public class JarInjector {
 
         @Override
         public ClassNode call() throws Exception {
+            System.out.println("Loading: " + path);
             ClassReader reader = new ClassReader(stream);
             reader.accept(classNode, 0);
             CallsInjector.inject(classNode, path);
@@ -53,22 +76,32 @@ public class JarInjector {
         }
 
         for (Future<ClassNode> future : EXECUTOR_SERVICE.invokeAll(callableInjectors)) {
-            ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
+            System.out.println("lol");
             ClassNode node = future.get();
+            ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
             node.accept(writer);
             classes.put(node.name, writer.toByteArray());
         }
 
         JarOutputStream jarOut = new JarOutputStream(new FileOutputStream(out));
         for(Map.Entry<String, byte[]> entry : classes.entrySet()){
-            JarEntry jarEntry = new JarEntry(entry.getKey());
+            JarEntry jarEntry = new JarEntry(entry.getKey() + ".class");
             jarOut.putNextEntry(jarEntry);
             jarOut.write(entry.getValue());
             jarOut.closeEntry();
         }
+        jarOut.putNextEntry(new JarEntry("tracer/Tracer.class"));
+        jarOut.write(TRACER);
+        jarOut.closeEntry();
+
+        jarOut.putNextEntry(new JarEntry("tracer/Boxer.class"));
+        jarOut.write(BOXER);
+        jarOut.closeEntry();
+
         jarOut.putNextEntry(new ZipEntry("META-INF/MANIFEST.MF"));
         in.getManifest().write(jarOut);
         jarOut.close();
+        EXECUTOR_SERVICE.shutdownNow();
     }
 
 }

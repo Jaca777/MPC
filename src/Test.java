@@ -1,8 +1,10 @@
-import org.objectweb.asm.tree.*;
-import tracer.IClassLoader;
+import tracer.ClassLoaderImpl;
+import tracer.JarInjector;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.jar.JarFile;
 
 /**
  * @author JacaDev
@@ -11,10 +13,16 @@ public class Test {
     public static void main(String... args) throws Exception {
         runtime();
     }
+    @SuppressWarnings("unchecked")
     private static void runtime() throws Exception {
-        IClassLoader loader = new IClassLoader();
+        ClassLoaderImpl loader = new ClassLoaderImpl();
         Class clazz = loader.loadClass("Test");
         clazz.getMethod("test", int.class).invoke(null, 20);
+    }
+    private static void toJar() throws Exception {
+        JarFile in = new JarFile(new File("src/SampleJar.jar"));
+        File out = new File("src/out.jar");
+        JarInjector.inject(in, out);
     }
     public static void test(int lol){
         int number = 20;
