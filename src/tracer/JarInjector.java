@@ -44,7 +44,7 @@ public class JarInjector {
     public static void inject(JarFile in, File out) throws Exception {
         Map<String, byte[]> classes = new HashMap<>();
         Enumeration<JarEntry> entries = in.entries();
-        List<CallableInjector> callableInjectors = new ArrayList<CallableInjector>();
+        List<CallableInjector> callableInjectors = new ArrayList<>();
         while (entries.hasMoreElements()) {
             JarEntry jarEntry = entries.nextElement();
             if (jarEntry.getName().endsWith(".class")) {
