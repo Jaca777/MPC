@@ -21,7 +21,7 @@ import java.util.zip.ZipEntry;
 public class JarInjector {
     public static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 8);
 
-    public static final byte[] BOXER;
+    private static final byte[] BOXER;
     static{
         byte[] BOXER1;
         try {
@@ -32,7 +32,7 @@ public class JarInjector {
         BOXER = BOXER1;
     }
 
-    public static final byte[] TRACER;
+    private static final byte[] TRACER;
     static{
         byte[] TRACER1;
         try {
