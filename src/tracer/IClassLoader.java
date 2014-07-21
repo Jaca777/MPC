@@ -14,7 +14,7 @@ import java.io.InputStream;
 public class IClassLoader extends ClassLoader {
     @Override
     protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        if (!name.startsWith("java")) {
+        if (!name.startsWith("java.")) {
             try {
                 String res = name.replace('.', '/') + ".class";
                 InputStream is = getResourceAsStream(res);
