@@ -19,7 +19,8 @@ import java.util.zip.ZipEntry;
  * @author JacaDev
  */
 public class JarInjector {
-    public static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 4);
+    public static final ExecutorService EXECUTOR_SERVICE = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors() * 8);
+
     public static final byte[] BOXER;
     static{
         byte[] BOXER1;
@@ -54,7 +55,6 @@ public class JarInjector {
 
         @Override
         public ClassNode call() throws Exception {
-            System.out.println("Loading: " + path);
             ClassReader reader = new ClassReader(stream);
             reader.accept(classNode, 0);
             CallsInjector.inject(classNode, path);
@@ -76,7 +76,6 @@ public class JarInjector {
         }
 
         for (Future<ClassNode> future : EXECUTOR_SERVICE.invokeAll(callableInjectors)) {
-            System.out.println("lol");
             ClassNode node = future.get();
             ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
             node.accept(writer);

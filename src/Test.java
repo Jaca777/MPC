@@ -11,7 +11,7 @@ import java.util.jar.JarFile;
  */
 public class Test {
     public static void main(String... args) throws Exception {
-        runtime();
+        toJar();
     }
     @SuppressWarnings("unchecked")
     private static void runtime() throws Exception {
